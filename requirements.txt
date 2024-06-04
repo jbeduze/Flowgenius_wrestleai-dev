@@ -4,3 +4,4 @@ streamlit-extras
 openai
 folium
 streamlit_folium
+plotly

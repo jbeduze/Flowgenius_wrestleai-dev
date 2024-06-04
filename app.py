@@ -1,3 +1,7 @@
 import streamlit as st
 
-st.write("hello world")
+st.set_page_config(
+    page_title="",
+    page_icon="M_logo.png",
+    layout="wide",
+)

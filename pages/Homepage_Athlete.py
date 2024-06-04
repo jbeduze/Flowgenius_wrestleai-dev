@@ -6,10 +6,11 @@ import folium
 from folium import CircleMarker
 from datetime import datetime, timedelta
 import streamlit_folium
+import plotly.graph_objects as go
 
 #Large elements we want to display for Athletes:
-# 1. Profile (name) x
-# 2. win/loss trackers with expander of data on those x
+# 1. Profile (name)- complete
+# 2. win/loss trackers with expander of data on those-complete
 # 3. coach notes and coaching team brief 
 # 4. Ai notes
 # 5. event map
@@ -51,6 +52,7 @@ col3 = st.columns(3)
 with col3[0]:
      col3_2 = st.columns(2)
 col4 = st.columns([3,1,2,5])
+col3_1 = st.columns(3)
 
 
 #profile info
@@ -363,3 +365,108 @@ with col4[3]:
     st.title("Upcoming Events Map")
     st.markdown("This map shows the upcoming wrestling events with color-coded markers based on the date and prestige of the event.")
     st_folium = st.components.v1.html(folium.Map._repr_html_(m), height=800)
+
+
+
+
+
+# Sample data for past events
+data = {
+    "Event_Date": ["2024-01-15", "2024-02-20", "2024-03-10", "2024-04-05", "2024-05-15"],
+    "Event_Name": ["Winter Open", "Spring Classic", "March Madness", "April Showdown", "May Invitational"],
+    "Location": ["Chicago, IL", "Detroit, MI", "Columbus, OH", "Indianapolis, IN", "Milwaukee, WI"],
+    "Weight_Class": [65, 65, 65, 65, 65],
+    "Placement": [1, 3, 2, 4, 1],
+    "Result": ["Win", "Loss", "Win", "Loss", "Win"],
+    "Coach_Notes": [
+        "Great performance overall. Impressive technique on the mat. Needs to work on endurance.",
+        "Tough competition, but showed resilience. Needs to improve on counter moves.",
+        "Solid effort, good comeback after the last event. Focus on refining takedowns.",
+        "Difficult event, but showed good spirit. Need to focus on agility.",
+        "Excellent result, demonstrated significant improvement. Keep working on strength training."
+    ],
+    "Athlete_Notes": [
+        "Felt strong and confident. Happy with my performance, but need to work on stamina.",
+        "Disappointed with the loss, but learned a lot. Need to focus on defensive strategies.",
+        "Proud of my improvement. Will keep working on my takedowns and overall strategy.",
+        "Challenging event, felt sluggish. Need to improve my speed and agility.",
+        "Extremely satisfied with my performance. Focused on strength and it paid off."
+    ]
+}
+
+# Convert to DataFrame
+past_events_df = pd.DataFrame(data)
+
+st.title("Wrestling Season Timeline")
+
+# Create timeline using Plotly
+fig = go.Figure()
+
+# Add past events to the timeline
+for i, row in past_events_df.iterrows():
+    fig.add_trace(go.Scatter(
+        x=[row["Event_Date"]],
+        y=[0],
+        mode='markers+text',
+        marker=dict(size=10),
+        name=row["Event_Name"],
+        hoverinfo='text',
+        text=f"Event: {row['Event_Name']}<br>Location: {row['Location']}<br>Placement: {row['Placement']}<br>Result: {row['Result']}",
+        textposition="top center"
+    ))
+
+# Add current date marker
+today = pd.to_datetime("today").strftime('%Y-%m-%d')
+fig.add_trace(go.Scatter(
+    x=[today],
+    y=[0],
+    mode='markers+text',
+    marker=dict(size=12, color='red'),
+    name='Today',
+    hoverinfo='text',
+    text='Today',
+    textposition="top center"
+))
+
+# Layout adjustments
+fig.update_layout(
+    title='Wrestling Season Timeline',
+    xaxis_title='Date',
+    yaxis_title='',
+    yaxis=dict(showticklabels=False),
+    showlegend=False,
+    xaxis=dict(
+        range=["2024-01-01", "2024-12-31"],
+        tickformat='%Y-%m-%d'
+    )
+)
+
+st.plotly_chart(fig)
+
+# Display details of selected event
+selected_event = st.selectbox("Select an Event to View Details", past_events_df["Event_Name"])
+
+if selected_event:
+    event_details = past_events_df[past_events_df["Event_Name"] == selected_event].iloc[0]
+    st.subheader(f"Details for {selected_event}")
+    st.write(f"**Event Date:** {event_details['Event_Date']}")
+    st.write(f"**Location:** {event_details['Location']}")
+    st.write(f"**Weight Class:** {event_details['Weight_Class']}")
+    st.write(f"**Placement:** {event_details['Placement']}")
+    st.write(f"**Result:** {event_details['Result']}")
+    
+    with st.expander("Coach Notes"):
+        st.write(event_details["Coach_Notes"])
+    
+    with st.expander("Athlete Notes"):
+        st.write(event_details["Athlete_Notes"])
+
+# Text box for athlete's thoughts
+st.subheader("Input Your Thoughts on Recent Events")
+recent_event = st.selectbox("Select a Recent Event", past_events_df["Event_Name"])
+athlete_thoughts = st.text_area("Your Thoughts", "")
+submit_button = st.button("Submit")
+
+if submit_button:
+    st.write(f"Your thoughts on {recent_event} have been submitted!")
+
