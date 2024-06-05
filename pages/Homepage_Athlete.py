@@ -362,10 +362,25 @@ with col4[3]:
         ).add_to(m)
 
     # Display the map in Streamlit
-    st.title("Upcoming Events Map")
-    st.markdown("This map shows the upcoming wrestling events with color-coded markers based on the date and prestige of the event.")
-    st_folium = st.components.v1.html(folium.Map._repr_html_(m), height=800)
-
+    def event_container():
+        with stylable_container(
+            key="event_container",
+            css_styles="""
+            {
+                background-color: #708090CC;
+                color: #001F3F;
+                border: 2px solid #FFCB05;
+                border-radius: 5px;
+                box-shadow: 0px 0px 15px 3px #FFAA00;
+                padding: 5px;
+            }
+            """,
+        ):
+            with st.container():
+                st.title("Upcoming Events Map")
+                st.markdown("This map shows the upcoming wrestling events with color-coded markers based on the date and prestige of the event.")
+                st_folium = st.components.v1.html(folium.Map._repr_html_(m), height=500)
+    event_container()
 
 
 
@@ -470,3 +485,70 @@ submit_button = st.button("Submit")
 if submit_button:
     st.write(f"Your thoughts on {recent_event} have been submitted!")
 
+
+import streamlit as st
+import pandas as pd
+from datetime import datetime, timedelta
+
+# Sample data for goals and their set dates
+goals_data = [
+    {"goal": "Improve endurance and stamina to maintain high performance throughout matches.", "set_date": "2024-05-01"},
+    {"goal": "Perfect takedown techniques to increase scoring opportunities.", "set_date": "2024-05-15"},
+    {"goal": "Enhance defensive strategies to reduce opponent scoring chances.", "set_date": "2024-06-01"}
+]
+
+# Convert to DataFrame for easier handling
+goals_df = pd.DataFrame(goals_data)
+
+
+st.title("Athlete Goals")
+
+# Function to display goals with set dates
+def display_goals(goals_df):
+    st.subheader("Goals for the Season")
+    for index, row in goals_df.iterrows():
+        goal = row["goal"]
+        set_date = row["set_date"]
+        st.markdown(f"**{index + 1}. {goal}**  \n*Set on: {set_date}*")
+
+display_goals(goals_df)
+
+# Select a goal to replace
+st.subheader("Manage Your Goals")
+goal_to_replace = st.selectbox("Select a goal to replace or add a new goal:", ["Add a new goal"] + [f"Goal {i+1}" for i in range(len(goals_df))])
+
+# Input for the new goal
+new_goal = st.text_area("New Goal")
+
+# Calculate days since goals were set
+today = datetime.today()
+goals_df["set_date"] = pd.to_datetime(goals_df["set_date"])
+goals_df["days_since_set"] = (today - goals_df["set_date"]).dt.days
+
+# Check if the new goal can be set
+can_set_goal = True
+if len(goals_df) >= 3 and goal_to_replace == "Add a new goal":
+    st.warning("You already have 3 goals. Please replace an existing goal to add a new one.")
+    can_set_goal = False
+
+# Check if the goal can be changed within 14 days
+if goal_to_replace != "Add a new goal":
+    goal_index = int(goal_to_replace.split()[1]) - 1
+    if goals_df.loc[goal_index, "days_since_set"] < 14:
+        days_left = 14 - goals_df.loc[goal_index, "days_since_set"]
+        st.warning(f"Caution: this goal has only been live for {goals_df.loc[goal_index, 'days_since_set']} of 14 days. Your goal is not able to be changed until 14 days have been reached. Your training incorporates these goals, so it is imperative to choose goals you are passionate about following.")
+        can_set_goal = False
+
+# Submit button to set the new goal
+goal_submit_button = st.button("Submit")
+if goal_submit_button and can_set_goal:
+    if goal_to_replace == "Add a new goal":
+        new_goal_data = {"goal": new_goal, "set_date": today.strftime('%Y-%m-%d')}
+        goals_df = goals_df.append(new_goal_data, ignore_index=True)
+    else:
+        goals_df.loc[goal_index, "goal"] = new_goal
+        goals_df.loc[goal_index, "set_date"] = today.strftime('%Y-%m-%d')
+    
+    # Display updated goals
+    st.success("Goal has been updated successfully!")
+    display_goals(goals_df)
