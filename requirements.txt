@@ -5,3 +5,5 @@ openai
 folium
 streamlit_folium
 plotly
+streamlit-vis-timeline
+opencv-python-headless

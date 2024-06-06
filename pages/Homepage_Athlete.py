@@ -7,6 +7,8 @@ from folium import CircleMarker
 from datetime import datetime, timedelta
 import streamlit_folium
 import plotly.graph_objects as go
+import json
+from streamlit_timeline import st_timeline
 
 #Large elements we want to display for Athletes:
 # 1. Profile (name)- complete
@@ -381,7 +383,7 @@ with col4[3]:
                 st.markdown("This map shows the upcoming wrestling events with color-coded markers based on the date and prestige of the event.")
                 st_folium = st.components.v1.html(folium.Map._repr_html_(m), height=500)
     event_container()
-
+    
 
 
 
@@ -456,39 +458,103 @@ fig.update_layout(
     )
 )
 
-st.plotly_chart(fig)
+col2_1 = st.columns(2)
+with col2_1[0]:
+    def past_event_container():
+            with stylable_container(
+                key="past-event_container",
+                css_styles="""
+                {
+                    background-color: #708090CC;
+                    color: #001F3F;
+                    border: 2px solid #FFCB05;
+                    border-radius: 5px;
+                    box-shadow: 0px 0px 15px 3px #FFAA00;
+                    padding: 5px;
+                }
+                """,
+            ):
+                st.plotly_chart(fig)
 
-# Display details of selected event
-selected_event = st.selectbox("Select an Event to View Details", past_events_df["Event_Name"])
+                # Display details of selected event
+                selected_event = st.selectbox("Select an Event to View Details", past_events_df["Event_Name"])
 
-if selected_event:
-    event_details = past_events_df[past_events_df["Event_Name"] == selected_event].iloc[0]
-    st.subheader(f"Details for {selected_event}")
-    st.write(f"**Event Date:** {event_details['Event_Date']}")
-    st.write(f"**Location:** {event_details['Location']}")
-    st.write(f"**Weight Class:** {event_details['Weight_Class']}")
-    st.write(f"**Placement:** {event_details['Placement']}")
-    st.write(f"**Result:** {event_details['Result']}")
-    
-    with st.expander("Coach Notes"):
-        st.write(event_details["Coach_Notes"])
-    
-    with st.expander("Athlete Notes"):
-        st.write(event_details["Athlete_Notes"])
+                if selected_event:
+                    event_details = past_events_df[past_events_df["Event_Name"] == selected_event].iloc[0]
+                    st.subheader(f"Details for {selected_event}")
+                    st.write(f"**Event Date:** {event_details['Event_Date']}")
+                    st.write(f"**Location:** {event_details['Location']}")
+                    st.write(f"**Weight Class:** {event_details['Weight_Class']}")
+                    st.write(f"**Placement:** {event_details['Placement']}")
+                    st.write(f"**Result:** {event_details['Result']}")
+                    
+                    with st.expander("Coach Notes"):
+                        st.write(event_details["Coach_Notes"])
+                    
+                    with st.expander("Athlete Notes"):
+                        st.write(event_details["Athlete_Notes"])
 
-# Text box for athlete's thoughts
-st.subheader("Input Your Thoughts on Recent Events")
-recent_event = st.selectbox("Select a Recent Event", past_events_df["Event_Name"])
-athlete_thoughts = st.text_area("Your Thoughts", "")
-submit_button = st.button("Submit")
+                # Text box for athlete's thoughts
+                st.subheader("Input Your Thoughts on Recent Events")
+                recent_event = st.selectbox("Select a Recent Event", past_events_df["Event_Name"])
+                athlete_thoughts = st.text_area("Your Thoughts", "")
+                submit_button = st.button("Submit")
 
-if submit_button:
-    st.write(f"Your thoughts on {recent_event} have been submitted!")
+                if submit_button:
+                    st.write(f"Your thoughts on {recent_event} have been submitted!")
+    past_event_container()
 
+with col2_1[1]:
+    # Sample dataset for past events
+    events = [
+        {"name": "Midwest Invitational", "date": "2024-06-10", "time": "10:00 AM", "location": "University of Illinois", "lat": 40.1106, "long": -88.2073, "prestige": "Major Event", "info": "First major event of the season"},
+        {"name": "Great Lakes Showdown", "date": "2024-06-17", "time": "2:00 PM", "location": "Michigan State University", "lat": 42.7018, "long": -84.4822, "prestige": "Major Event", "info": "High profile teams participating"},
+        {"name": "Summer Slam", "date": "2024-06-24", "time": "9:00 AM", "location": "University of Wisconsin", "lat": 43.0766, "long": -89.4125, "prestige": "Casual", "info": "Good opportunity for new wrestlers"},
+        {"name": "Independence Cup", "date": "2024-07-04", "time": "12:00 PM", "location": "Ohio State University", "lat": 40.0015, "long": -83.0197, "prestige": "Major Event", "info": "Celebrating Independence Day"},
+        {"name": "Corn Belt Classic", "date": "2024-07-11", "time": "11:00 AM", "location": "University of Iowa", "lat": 41.6611, "long": -91.5302, "prestige": "Major Event", "info": "Prestigious regional competition"},
+        {"name": "River City Rumble", "date": "2024-07-18", "time": "1:00 PM", "location": "University of Minnesota", "lat": 44.9738, "long": -93.2277, "prestige": "Casual", "info": "Local teams matchup"},
+        {"name": "Bluegrass Open", "date": "2024-07-25", "time": "3:00 PM", "location": "University of Kentucky", "lat": 38.0394, "long": -84.5037, "prestige": "Casual", "info": "Open invitational for all levels"},
+        {"name": "Rust Belt Invitational", "date": "2024-08-01", "time": "10:00 AM", "location": "Penn State University", "lat": 40.7982, "long": -77.8599, "prestige": "Major Event", "info": "Key event for national rankings"},
+        {"name": "Prairie State Duel", "date": "2024-08-08", "time": "4:00 PM", "location": "Northwestern University", "lat": 42.0565, "long": -87.6753, "prestige": "Casual", "info": "Friendly duel with local schools"},
+        {"name": "Sunflower State Clash", "date": "2024-08-15", "time": "9:30 AM", "location": "University of Kansas", "lat": 38.9543, "long": -95.2558, "prestige": "Major Event", "info": "Final major event before season break"}
+    ]
 
-import streamlit as st
-import pandas as pd
-from datetime import datetime, timedelta
+    # Convert events to DataFrame
+    events_df = pd.DataFrame(events)
+
+    # Create timeline items
+    timeline_items = [
+        {
+            "id": i,
+            "content": event["name"],
+            "start": event["date"]
+        } for i, event in enumerate(events)
+    ]
+
+    # Display timeline
+    timeline = st_timeline(timeline_items, groups=[], options={})
+
+    # Get selected event
+    selected_event_id = timeline.get('selection', [None])[0]
+
+    if selected_event_id is not None:
+        selected_event = events_df.iloc[selected_event_id]
+        st.subheader(f"Details for {selected_event['name']}")
+        st.write(f"**Event Date:** {selected_event['date']}")
+        st.write(f"**Time:** {selected_event['time']}")
+        st.write(f"**Location:** {selected_event['location']}")
+        st.write(f"**Prestige:** {selected_event['prestige']}")
+        st.write(f"**Additional Info:** {selected_event['info']}")
+
+        # Text box for athlete's thoughts
+        st.subheader("Input Your Thoughts on Recent Events")
+        recent_event = selected_event['name']
+        athlete_thoughts = st.text_area("Your Thoughts", "")
+        submit_button = st.button("Submit")
+
+        if submit_button:
+            st.write(f"Your thoughts on {recent_event} have been submitted!")
+
 
 # Sample data for goals and their set dates
 goals_data = [
@@ -540,7 +606,7 @@ if goal_to_replace != "Add a new goal":
         can_set_goal = False
 
 # Submit button to set the new goal
-goal_submit_button = st.button("Submit")
+goal_submit_button = st.button("Submit", key="goal_submit_button")
 if goal_submit_button and can_set_goal:
     if goal_to_replace == "Add a new goal":
         new_goal_data = {"goal": new_goal, "set_date": today.strftime('%Y-%m-%d')}
